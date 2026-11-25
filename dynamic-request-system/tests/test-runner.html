@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Request Hub – Scenario Tests</title>
+  <link rel="stylesheet" href="../assets/css/style.css">
+  <link rel="stylesheet" href="../assets/css/components.css">
+  <style>
+    body { padding: 24px; max-width: 1100px; margin: 0 auto; }
+    .scn { margin-top: 18px; }
+    .res td:first-child { width: 70px; }
+    .pass { color: var(--green); font-weight: 700; }
+    .fail { color: var(--red); font-weight: 700; }
+  </style>
+  <!-- Isolated storage namespace: running tests never touches the application's data -->
+  <script>window.DRS_STORAGE_PREFIX = 'drs.test.';</script>
+</head>
+<body>
+  <div class="page-header"><div><h1>Scenario Test Runner</h1><p>Executes the required business scenarios against the real workflow engine and services. Uses a separate storage namespace (<code>drs.test.*</code>), so your demo data is not affected.</p></div>
+    <div class="page-header__actions"><a class="btn" href="../index.html">Open application</a><button class="btn btn-primary" id="run">Run again</button></div></div>
+  <div id="summary"></div>
+  <div id="out"></div>
+
+  <script src="../assets/js/core/storage.js"></script>
+  <script src="../assets/js/core/constants.js"></script>
+  <script src="../assets/js/core/validation.js"></script>
+  <script src="../assets/js/core/auth.js"></script>
+  <script src="../assets/js/core/time.js"></script>
+  <script src="../assets/js/core/workflow-engine.js"></script>
+  <script src="../assets/js/core/template-service.js"></script>
+  <script src="../assets/js/core/data.js"></script>
+  <script src="scenarios.js"></script>
+  <script>
+    function esc(s) { return String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]); }
+    function run() {
+      const results = DRS.Tests.run();
+      const failed = results.filter((r) => !r.passed);
+      document.getElementById('summary').innerHTML = '<div class="alert alert--' + (failed.length ? 'error' : 'success') + '" id="result-banner" data-passed="' + (results.length - failed.length) + '" data-total="' + results.length + '"><div><strong>' +
+        (results.length - failed.length) + ' / ' + results.length + ' checks passed</strong>' + (failed.length ? failed.length + ' failed.' : 'All scenarios passed.') + '</div></div>';
+      const groups = {};
+      results.forEach((r) => { (groups[r.scenario] = groups[r.scenario] || []).push(r); });
+      document.getElementById('out').innerHTML = Object.entries(groups).map(([name, rows]) =>
+        '<div class="card scn"><div class="card__header"><h2>Scenario ' + esc(name) + '</h2>' + (rows.every((r) => r.passed) ? '<span class="badge badge--green">Passed</span>' : '<span class="badge badge--red">Failed</span>') + '</div>' +
+        '<div class="table-wrap"><table class="table res"><tbody>' + rows.map((r) => '<tr><td class="' + (r.passed ? 'pass">PASS' : 'fail">FAIL') + '</td><td>' + esc(r.check) + (r.detail ? '<div class="cell-sub">' + esc(r.detail) + '</div>' : '') + '</td></tr>').join('') + '</tbody></table></div></div>'
+      ).join('');
+    }
+    document.getElementById('run').addEventListener('click', run);
+    run();
+  </script>
+</body>
+</html>
